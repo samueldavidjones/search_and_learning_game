@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Bounded rational search study</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.6;color:#222;background:#f5f5f0;display:flex;justify-content:center;padding:20px}
+#app{max-width:880px;width:100%;background:#fff;border:1px solid #ccc;border-radius:4px;padding:40px;min-height:600px}
+.screen{display:none}.screen.active{display:block}
+h1{font-size:1.5em;margin-bottom:.8em}h2{font-size:1.2em;margin-bottom:.6em}p{margin-bottom:.8em}
+button{font-family:inherit;font-size:1em;padding:10px 28px;background:#2a5a8a;color:#fff;border:none;border-radius:3px;cursor:pointer;margin-top:12px}
+button:hover{background:#1d4068}button:disabled{background:#999;cursor:not-allowed}
+input[type="text"],input[type="number"],textarea,select{font-family:inherit;font-size:1em;padding:6px 10px;border:1px solid #aaa;border-radius:3px;width:100%;max-width:400px}
+textarea{max-width:100%;min-height:80px}
+.consent-item{margin:8px 0;display:flex;align-items:flex-start;gap:8px}.consent-item input{margin-top:5px;flex-shrink:0}
+.quiz-q{margin-bottom:18px}.quiz-q label{display:block;margin:3px 0 3px 20px;cursor:pointer}
+.err{color:#c00;font-size:.9em}.mt{margin-top:20px}.small{font-size:.85em;color:#666}
+#task-canvas{border:1px solid #ccc;background:#fafaf5;display:block;margin:0 auto}
+.phase-label{display:inline-block;padding:3px 12px;border-radius:3px;font-size:.85em;font-weight:bold}
+.phase-plan{background:#d4edfc;color:#1a5276}.phase-act{background:#d5f5e3;color:#1e7d32}.phase-done{background:#f9e79f;color:#7d6608}
+#btn-execute{background:#27ae60;font-size:1.1em;padding:10px 30px}#btn-execute:hover{background:#1e8449}
+.form-row{margin-bottom:14px}.form-row label{display:block;margin-bottom:4px;font-weight:bold}
+.score-box{display:inline-block;padding:4px 14px;border-radius:4px;font-weight:bold;font-size:.95em;background:#daeaf6;color:#1a5276;float:right}
+.pair-box{cursor:pointer;text-align:center;padding:16px 24px;border:2px solid #ddd;border-radius:8px;background:#fdebd0;transition:border-color .15s}
+.pair-box:hover{border-color:#2a5a8a}.pair-box.chosen{border-color:#27ae60;background:#d5f5e3}
+</style>
+</head>
+<body>
+<div id="app">
+
+<div class="screen active" id="scr-pid">
+  <h1>Welcome</h1>
+  <p>Please note that it <strong>is only possible to complete this task on a desktop computer</strong>.</p>
+  <p>Participants on tablets or mobile phones will not be able to complete the task and so will not receive remuneration.</p>
+  <p>If you are working on a desktop computer and are happy to continue, please enter your Prolific ID below.</p>
+  <div class="form-row" style="margin-top:24px"><label>Prolific ID</label><input type="text" id="inp-pid" placeholder="e.g. 5f3a8b..."></div>
+  <p class="err" id="pid-err"></p><button onclick="submitPid()">Continue</button>
+</div>
+
+<div class="screen" id="scr-info">
+  <h1>Information sheet</h1>
+  <p>You are invited to take part in a research study. Please read the description carefully. If you are happy to participate, click the 'Continue' button at the bottom of the page.</p>
+  <h2>What is the purpose of this study?</h2>
+  <p>This study will help us understand how people make decisions and learn when interacting with unfamiliar environments. Improving our understanding of these processes could have implications for education, health, and everyday decision-making.</p>
+  <h2>What is involved in the study?</h2>
+  <p>To start, we will explain a decision-making task and ask a few comprehension questions so that we can be sure you understand the task before you begin. You will then complete several blocks of the task, after which you will complete some short cognitive tasks. The whole study should take approximately 35 minutes.</p>
+  <h2>Is there a performance related bonus associated with this study?</h2>
+  <p>Yes. Please see the Prolific advertisement for details. The more points you earn, the higher the bonus. We aim to credit any performance related bonus via Prolific within one working week.</p>
+  <h2>What if I don't want to take part?</h2>
+  <p>Your participation is completely voluntary, so it is up to you whether you would like to take part. You can withdraw from the study at any point without having to provide any explanation. After the study is complete, you can withdraw your data for up to four weeks by contacting the research team (contact details below). After four weeks, data will be fully anonymised and it will no longer be possible to identify your individual data.</p>
+  <h2>Will my taking part in the study be kept confidential?</h2>
+  <p>Yes, your responses and data will be treated as strictly confidential. Giving basic demographic information (e.g., age, first language) at the end of the study is optional, and we request only your Prolific ID and digital initials as part of the consent process. If you are conducting this study via Prolific, or via a similar platform which holds a record of participant IP addresses, note that your IP address will not be transferred and stored outside of Prolific, for instance it will not be stored in the dataset used for analysis.</p>
+  <h2>What will happen to my data?</h2>
+  <p>The Data Protection Act 2018 and UK General Data Protection Regulations allow you control over your personal data and how it is used. Under GDPR, Bangor University is the data controller in relation to your personal data and will process your data for the purposes of this study. Digital research data will be stored on a password-protected computer. At the end of the study, the anonymised dataset may be deposited on a publicly available data repository so that other scientists can examine our results.</p>
+  <h2>Who is running the study?</h2>
+  <p>This study is led by Dr Sam Jones of Bangor University's Department of Psychology. The study has been given a favourable opinion by a Bangor University Research Ethics Committee.</p>
+  <h2>Who do I contact if I have concerns?</h2>
+  <p>If you have a concern about any aspect of this study, please contact Dr Sam Jones via email at <a href="mailto:samuel.jones@bangor.ac.uk">samuel.jones@bangor.ac.uk</a>. Alternatively, you might contact Bangor University's Senior Research Governance &amp; Policy Officer directly at <a href="mailto:seniorresearchgovofficer@bangor.ac.uk">seniorresearchgovofficer@bangor.ac.uk</a>.</p>
+  <button onclick="showScreen('scr-consent')">Continue</button>
+</div>
+
+<div class="screen" id="scr-consent">
+  <h1>Consent form</h1>
+  <div class="consent-item"><input type="checkbox" id="c1"><span>I have read and understood the information sheet.</span></div>
+  <div class="consent-item"><input type="checkbox" id="c2"><span>I understand that my participation is voluntary and I can withdraw at any time.</span></div>
+  <div class="consent-item"><input type="checkbox" id="c3"><span>I understand my data will be anonymised and handled in accordance with UK GDPR.</span></div>
+  <div class="consent-item"><input type="checkbox" id="c4"><span>I consent to my anonymised data being shared in open-access repositories.</span></div>
+  <div class="consent-item"><input type="checkbox" id="c5"><span>I agree to take part in this study.</span></div>
+  <div class="form-row mt"><label>Digital signature (initials)</label><input type="text" id="inp-sig" maxlength="10"></div>
+  <p class="err" id="consent-err"></p><button onclick="submitConsent()">I consent — continue</button>
+</div>
+
+<div class="screen" id="scr-instructions">
+  <h1>Task instructions</h1>
+  <p>You will see a branching network with a <strong>starting location</strong> (blue circle) and 16 other locations for you to search.</p>
+  <p>Each location hides a reward value. To reveal a value, <strong>click on it</strong>. Importantly, note that <strong>each click costs you -1 point</strong>.</p>
+  <p>You can only click locations <strong>next to already-revealed locations</strong>. These are highlighted in orange.</p>
+  <p>Once you have revealed the values of some locations, press the <strong>'Execute plan'</strong> button and then use your keyboard's <strong>arrow keys</strong> to move around and collect the reward values. Note that you can only move to revealed locations and can only move in one direction (you can't go back on yourself).</p>
+  <p>Note also that you don't have to navigate to the end of a path. Just press <strong>spacebar</strong> when navigating if you would like to stop at your current location.</p>
+  <p>Your score equals <strong>the sum of rewards along the path you took minus your click costs</strong>. Again, you do not need to search every location.</p>
+  <p><strong>Try to maximise your overall score</strong>. <strong>The more points you earn, the higher your performance related bonus.</strong></p>
+  <button onclick="showScreen('scr-practice-intro')">Continue to practice</button>
+</div>
+
+<div class="screen" id="scr-practice-intro">
+  <h1>Practice trials</h1>
+  <p>You will now do <strong>two practice trials</strong>. These do not count toward your score.</p>
+  <button onclick="startPractice()">Begin practice</button>
+</div>
+
+<div class="screen" id="scr-task">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+    <span id="task-block-label" class="small"></span><span id="task-score-box" class="score-box" style="display:none"></span>
+  </div>
+  <p id="task-status"></p>
+  <div style="text-align:center"><canvas id="task-canvas" width="700" height="500"></canvas></div>
+  <div style="text-align:center;margin-top:8px"><button id="btn-execute" style="display:none" onclick="executePhase()">Execute plan</button></div>
+</div>
+
+<div class="screen" id="scr-quiz">
+  <h1>Comprehension quiz</h1>
+  <div class="quiz-q"><p>1. What does clicking on a location do?</p>
+    <label><input type="radio" name="q1" value="a"> Moves you there</label>
+    <label><input type="radio" name="q1" value="b"> Removes it</label>
+    <label><input type="radio" name="q1" value="c"> Reveals the reward (costs −1 point)</label></div>
+  <div class="quiz-q"><p>2. During execution, which locations can you move to?</p>
+    <label><input type="radio" name="q2" value="a"> Only positive-reward locations</label>
+    <label><input type="radio" name="q2" value="b"> Any</label>
+    <label><input type="radio" name="q2" value="c"> Only revealed locations</label></div>
+  <div class="quiz-q"><p>3. How do you navigate during execution?</p>
+    <label><input type="radio" name="q3" value="a"> Arrow keys</label>
+    <label><input type="radio" name="q3" value="b"> Click on the locations</label>
+    <label><input type="radio" name="q3" value="c"> Type the location number</label></div>
+  <div class="quiz-q"><p>4. How do you stop early during navigation?</p>
+    <label><input type="radio" name="q4" value="a"> Press Escape</label>
+    <label><input type="radio" name="q4" value="b"> Right-click</label>
+    <label><input type="radio" name="q4" value="c"> Spacebar</label></div>
+  <div class="quiz-q"><p>5. Your trial score is:</p>
+    <label><input type="radio" name="q5" value="a"> Sum of path rewards minus click costs</label>
+    <label><input type="radio" name="q5" value="b"> Number of locations revealed</label>
+    <label><input type="radio" name="q5" value="c"> Reward at the final location only</label></div>
+  <div class="quiz-q"><p>6. How do you earn a higher performance related bonus?</p>
+    <label><input type="radio" name="q6" value="a"> Complete the task as quickly as possible</label>
+    <label><input type="radio" name="q6" value="b"> Click as many locations as possible</label>
+    <label><input type="radio" name="q6" value="c"> Earn more points (rewards minus clicks)</label></div>
+  <p class="err" id="quiz-err"></p><button onclick="submitQuiz()">Submit</button>
+</div>
+
+
+<div class="screen" id="scr-block-intro"><h1 id="block-intro-title"></h1><div id="block-intro-text"></div><div id="block-intro-cc" style="display:none;background:#fdebd0;border-radius:6px;padding:16px 20px;margin-top:16px"><p style="font-weight:bold;margin-bottom:8px">Brief comprehension check</p><p id="bcc-question"></p><label style="display:block;margin:4px 0 4px 16px;cursor:pointer"><input type="radio" name="bcc" value="a" onclick="checkBlockCC()"> <span id="bcc-opt-a"></span></label><label style="display:block;margin:4px 0 4px 16px;cursor:pointer"><input type="radio" name="bcc" value="b" onclick="checkBlockCC()"> <span id="bcc-opt-b"></span></label><label style="display:block;margin:4px 0 4px 16px;cursor:pointer"><input type="radio" name="bcc" value="c" onclick="checkBlockCC()"> <span id="bcc-opt-c"></span></label><p class="err" id="bcc-err"></p></div><button id="btn-start-block" onclick="startBlock()">Begin</button></div>
+
+<div class="screen" id="scr-strategy">
+  <h1>Strategy reflection</h1>
+  <p>Please reflect on your strategy in the most recent block. For instance, how did you decide when to stop searching?</p>
+  <textarea id="strategy-text"></textarea>
+  <p class="mt">Please click continue when you are ready.</p>
+  <button onclick="submitStrategy()">Continue</button>
+</div>
+
+<div class="screen" id="scr-section-break">
+  <h1>End of part one</h1>
+  <p>Well done — the first part of the experiment is complete.</p>
+  <p>Feel free to take a short break here if you want.</p>
+  <p>Click continue when ready.</p>
+  <button onclick="advanceToNextBlock()">Continue</button>
+</div>
+
+<div class="screen" id="scr-separator">
+  <h1>Block complete</h1>
+  <p>Well done. If you need to, take a quick breather, stretch, and refresh.</p>
+  <p>Click continue when ready.</p>
+  <button onclick="advanceToNextBlock()">Continue</button>
+</div>
+
+<div class="screen" id="scr-val-est">
+  <h1>Value estimation</h1>
+  <p>What do you think the <strong>average reward</strong> is for this symbol?</p>
+  <p id="ve-progress" class="small"></p>
+  <div style="text-align:center;margin:20px 0">
+    <div style="display:inline-block;padding:20px 28px;border:2px solid #ddd;border-radius:8px;background:#fdebd0"><canvas width="60" height="60" id="ve-sym-cv"></canvas></div>
+  </div>
+  <div style="text-align:center;margin:16px 0">
+    <label style="font-weight:bold">Estimated average value:</label><br>
+    <input type="number" id="ve-value" min="-30" max="30" step="1" placeholder="e.g. 5" style="max-width:120px;text-align:center;margin-top:6px">
+  </div>
+  <div style="text-align:center;max-width:520px;margin:28px auto 0">
+    <p>How confident are you in this estimate?</p>
+    <div style="display:flex;align-items:center;gap:12px;justify-content:center">
+      <span style="font-size:.95em;color:#666">Not very<br>confident</span>
+      <input type="range" min="1" max="10" value="5" step="1" id="ve-conf" style="flex:1;max-width:340px;opacity:0.35" oninput="this.style.opacity='1';this.dataset.touched='1'" onpointerdown="this.style.opacity='1';this.dataset.touched='1'">
+      <span style="font-size:.95em;color:#666">Very<br>confident</span>
+    </div>
+  </div>
+  <p class="err" id="ve-err" style="text-align:center"></p>
+  <div style="text-align:center"><button onclick="submitValEst()">Next</button></div>
+</div>
+
+<div class="screen" id="scr-pairs">
+  <h1>Symbol knowledge test</h1>
+  <p>Which symbol do you think has a <strong>higher average reward</strong>? Click to choose.</p>
+  <p id="pairs-progress" class="small"></p>
+  <div style="display:flex;gap:40px;justify-content:center;margin:30px 0;align-items:center">
+    <div class="pair-box" onclick="pairChoice('left')" id="pair-left-box"><canvas width="90" height="90" id="pair-left-cv"></canvas></div>
+    <div style="font-size:1.5em;color:#999">or</div>
+    <div class="pair-box" onclick="pairChoice('right')" id="pair-right-box"><canvas width="90" height="90" id="pair-right-cv"></canvas></div>
+  </div>
+  <div id="pairs-conf-area" style="display:none;text-align:center;margin-top:20px">
+    <p>How confident are you in your choice?</p>
+    <div style="display:flex;align-items:center;gap:12px;justify-content:center;max-width:520px;margin:0 auto">
+      <span style="font-size:.95em;color:#666">Not very<br>confident</span>
+      <input type="range" min="1" max="10" value="5" step="1" id="conf-slider" style="flex:1;max-width:340px;opacity:0.35" oninput="this.style.opacity='1';this.dataset.touched='1'" onpointerdown="this.style.opacity='1';this.dataset.touched='1'">
+      <span style="font-size:.95em;color:#666">Very<br>confident</span>
+    </div>
+    <p class="err" id="pairs-conf-err"></p>
+    <button onclick="submitPairConf()">Next</button>
+  </div>
+</div>
+
+<div class="screen" id="scr-crt">
+  <h1>Problem solving</h1><p>Type your answer in the box.</p>
+  <div class="form-row" style="margin-bottom:20px"><p><strong>1.</strong> A bat and a ball cost £1.10 in total. The bat costs £1.00 more than the ball. How much does the ball cost? (in pence)</p><input type="text" id="crt1" placeholder="Enter a number"></div>
+  <div class="form-row" style="margin-bottom:20px"><p><strong>2.</strong> If it takes 5 machines 5 minutes to make 5 widgets, how long would it take 100 machines to make 100 widgets? (in minutes)</p><input type="text" id="crt2" placeholder="Enter a number"></div>
+  <div class="form-row" style="margin-bottom:20px"><p><strong>3.</strong> In a lake, there is a patch of lily pads. Every day, the patch doubles in size. If it takes 48 days for the patch to cover the entire lake, how long would it take for the patch to cover half of the lake? (in days)</p><input type="text" id="crt3" placeholder="Enter a number"></div>
+  <p class="err" id="crt-err"></p>
+  <p class="err" id="crt-err"></p>
+  <button onclick="submitCrt()">Continue</button>
+</div>
+
+<div class="screen" id="scr-digit-fwd-intro">
+  <h1>Digit span</h1>
+  <h2>Part 1: Digits forward</h2>
+  <p>You will see a sequence of digits, one at a time. After the sequence, type them back in the <strong>same order</strong>.</p>
+  <p>For instance, if you see <strong>4 8 2</strong>, type <strong>4 8 2</strong>.</p>
+  <div style="text-align:center"><p>Quick check: if you saw <strong>6 1 9</strong>, what would you type?</p><input type="text" id="digit-check-input" maxlength="5" style="max-width:140px;text-align:center" placeholder="Type here"><br><button id="digit-check-btn" disabled style="background:#999;margin-top:10px" onclick="startForwardSpan()">Begin forward span</button><p class="err" id="fwd-err"></p></div>
+</div>
+
+<div class="screen" id="scr-digit-fwd-task">
+  <h1>Digits forward — type in the same order</h1>
+  <div id="digit-display" style="text-align:center;font-size:2.9em;font-weight:bold;margin:20px auto;min-height:60px;max-width:120px"></div>
+  <div style="text-align:center"><input type="text" id="digit-input" style="max-width:180px;text-align:center;font-size:1.2em;display:none;margin:0 auto" autocomplete="off"><br>
+    <button id="digit-submit-btn" style="display:none" onclick="submitDigitTrial()">Submit</button>
+    <button id="digit-next-btn" style="display:none;background:#2a5a8a" onclick="nextDigitTrial()">Next</button></div>
+  <p id="digit-feedback" style="text-align:center;margin-top:10px;font-weight:bold"></p>
+</div>
+
+<div class="screen" id="scr-digit-bwd-intro">
+  <h1>Digit span</h1>
+  <h2>Part 2: Digits backward</h2>
+  <p>Now you will type the digits in <strong>reverse order</strong>.</p>
+  <p>For instance, if you see <strong>1 2 3 4 5</strong>, type <strong>5 4 3 2 1</strong>.</p>
+  <div style="text-align:center"><p style="margin-top:16px">Quick check: if you saw <strong>3 7 2</strong>, what would you type?</p><input type="text" id="bwd-check" maxlength="5" style="max-width:140px;text-align:center" placeholder="Type here"><br><button id="bwd-check-btn" disabled style="background:#999;margin-top:8px" onclick="startBackwardSpan()">Begin backward span</button><p class="err" id="bwd-err"></p></div>
+</div>
+
+<div class="screen" id="scr-digit-bwd-task">
+  <h1>Digits backward — type in reverse order</h1>
+  <div id="digit-display-bwd" style="text-align:center;font-size:2.9em;font-weight:bold;margin:20px auto;min-height:60px;max-width:120px"></div>
+  <div style="text-align:center"><input type="text" id="digit-input-bwd" style="max-width:180px;text-align:center;font-size:1.2em;display:none;margin:0 auto" autocomplete="off"><br>
+    <button id="digit-submit-btn-bwd" style="display:none" onclick="submitDigitTrial()">Submit</button>
+    <button id="digit-next-btn-bwd" style="display:none;background:#2a5a8a" onclick="nextDigitTrial()">Next</button></div>
+  <p id="digit-feedback-bwd" style="text-align:center;margin-top:10px;font-weight:bold"></p>
+</div>
+
+<!-- BDI (optional) -->
+<div class="screen" id="scr-bdi"><h1>Questionnaire — mood</h1>
+  <p>For each group of statements, select the one that best describes the way you have been feeling during the <strong>past two weeks</strong>.</p>
+  <div id="bdi-items"></div><p class="err" id="bdi-err"></p><button onclick="submitBdi()">Continue</button></div>
+
+<!-- STAI (optional) -->
+<div class="screen" id="scr-stai"><h1>Questionnaire — general feelings</h1>
+  <p>Indicate how you <strong>generally</strong> feel.</p>
+  <table class="q-table"><thead><tr><th>Statement</th><th>Almost never</th><th>Sometimes</th><th>Often</th><th>Almost always</th></tr></thead>
+  <tbody id="stai-body"></tbody></table><p class="err" id="stai-err"></p><button onclick="submitStai()">Continue</button></div>
+
+<div class="screen" id="scr-demographics">
+  <h1>Demographics</h1>
+  <div class="form-row"><label>Age</label><input type="number" id="demo-age" min="16" max="99" style="max-width:120px"> <label style="font-weight:normal;display:inline;margin-left:12px"><input type="checkbox" id="demo-age-pnts" onchange="if(this.checked){document.getElementById('demo-age').value='';document.getElementById('demo-age').disabled=true;}else{document.getElementById('demo-age').disabled=false;}"> Prefer not to say</label></div>
+  <div class="form-row"><label>Gender</label><select id="demo-gender"><option value="">Select…</option><option>Male</option><option>Female</option><option>Non-binary</option><option>Prefer not to say</option></select></div>
+  <div class="form-row"><label>Is English your first language?</label><select id="demo-english"><option value="">Select…</option><option>Yes</option><option>No</option><option>Prefer not to say</option></select></div>
+  <div class="form-row"><label>Highest education completed</label><select id="demo-education"><option value="">Select…</option><option>GCSEs or equivalent</option><option>A-levels or equivalent</option><option>Undergraduate degree</option><option>Postgraduate degree</option><option>Doctoral degree</option><option>Other</option><option>Prefer not to say</option></select></div>
+  <p class="err" id="demo-err"></p>
+  <button onclick="submitDemographics()">Continue</button>
+</div>
+
+<div class="screen" id="scr-debrief">
+  <h1>Debriefing</h1>
+  <p>Thank you for completing this study. The total number of points you earned is <strong id="debrief-total"></strong>.</p>
+  <p>Below is a breakdown of points by block.</p>
+  <table style="border-collapse:collapse;margin:12px 0;max-width:400px"><thead><tr><th style="padding:6px 16px;border-bottom:2px solid #999;text-align:center">Block</th><th style="padding:6px 16px;border-bottom:2px solid #999;text-align:center">Points</th></tr></thead><tbody id="debrief-block-rows"></tbody></table>
+  <p>We aim to credit any performance related bonus via Prolific within one working week.</p>
+  <p>Understanding agentic behaviour is at the frontier of cognitive neuroscience. This study investigated how people search for information and make decisions under uncertainty.</p>
+  <p>If you have any questions or concerns about this work, please contact project lead Dr Sam Jones via email at <a href="mailto:samuel.jones@bangor.ac.uk">samuel.jones@bangor.ac.uk</a>. Alternatively, please contact Bangor University's Senior Research Governance &amp; Policy Officer at <a href="mailto:seniorresearchgovofficer@bangor.ac.uk">seniorresearchgovofficer@bangor.ac.uk</a>.</p>
+  <p style="margin-top:20px">Your Prolific task completion code is:</p>
+  <div style="display:flex;align-items:center;gap:10px;margin:8px 0 16px"><input type="text" id="prolific-code" value="CBU84NF3" readonly style="font-size:1.1em;font-weight:bold;text-align:center;max-width:220px;background:#f5f5f5;border:1px solid #ccc;padding:8px 12px"><button onclick="navigator.clipboard.writeText(document.getElementById('prolific-code').value);this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)" style="background:#2a5a8a;padding:6px 16px;font-size:0.95em">Copy</button></div>
+  <p>Please ensure that you copy the code before clicking <a href="https://app.prolific.com/submissions/complete?cc=CBU84NF3" target="_blank" style="color:#3b82f6;text-decoration:underline">here to return to Prolific</a>.</p>
+  <p>Thank you once again.</p>
+</div>
+
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+const CONFIG={practiceTrials:2,clickCost:1};
+const GRAPH={children:{0:[1,5,9,13],1:[2],5:[6],9:[10],13:[14],2:[3,4],6:[7,8],10:[11,12],14:[15,16],3:[],4:[],7:[],8:[],11:[],12:[],15:[],16:[]},parent:{0:null,1:0,5:0,9:0,13:0,2:1,6:5,10:9,14:13,3:2,4:2,7:6,8:6,11:10,12:10,15:14,16:14},depth:{0:0,1:1,5:1,9:1,13:1,2:2,6:2,10:2,14:2,3:3,4:3,7:3,8:3,11:3,12:3,15:3,16:3},pos:{0:[350,250],1:[350,170],2:[350,90],3:[280,30],4:[420,30],5:[430,250],6:[510,250],7:[570,180],8:[570,320],9:[350,330],10:[350,410],11:[280,470],12:[420,470],13:[270,250],14:[190,250],15:[130,180],16:[130,320]},arrowMap:{0:{ArrowUp:1,ArrowRight:5,ArrowDown:9,ArrowLeft:13},1:{ArrowUp:2},2:{ArrowLeft:3,ArrowRight:4},5:{ArrowRight:6},6:{ArrowUp:7,ArrowDown:8},9:{ArrowDown:10},10:{ArrowLeft:11,ArrowRight:12},13:{ArrowLeft:14},14:{ArrowUp:15,ArrowDown:16}},nodeCount:17,terminals:[3,4,7,8,11,12,15,16],paths:[[0,1,2,3],[0,1,2,4],[0,5,6,7],[0,5,6,8],[0,9,10,11],[0,9,10,12],[0,13,14,15],[0,13,14,16]],d1:[1,5,9,13]};
+const DEPTH_SD={constant:{1:3,2:3,3:3},increasing:{1:1.5,2:3,3:6},decreasing:{1:6,2:3,3:1.5}};
+const SYM_A=['✱','ε','≈','Ω'],SYM_B=['λ','Ψ','Π','Φ'],SYM_C=['✕','○','□','△'];
+const SYM_SAFE={'✱':'asterisk','ε':'epsilon','≈':'approx','Ω':'omega','λ':'lambda','Ψ':'psi','Π':'pi','Φ':'phi','✕':'cross','○':'circle','□':'square','△':'triangle'};
+const MEANS_B={'λ':8,'Ψ':3,'Π':-3,'Φ':-8},SD_B=2;
+const MEANS_C={'△':8,'□':3,'○':-3,'✕':-8},SD_C=2;
+const STATE={participantId:'',counterbalance:'',consentTimestamp:'',quizPassed:false,quizAttempts:0,globalTrialNum:0,currentBlockIdx:-1,currentTrialInBlock:0,isPractice:false,trial:null,blockDefs:[],events:[],strategyComments:[],pairedChoiceData:[],valEstData:[],crt:null,digitSpan:null,bdi:null,stai:null,includeBdi:false,includeStai:false,demographics:{},totalScore:0,blockScores:{}};
+function ts(){return Date.now()}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function gaussRand(m,s){const u=Math.random(),v=Math.random();return m+s*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function gaussInt(m,s){return Math.round(gaussRand(m,s))}
+
+function drawSymbol(cx,sym,x,y,r,col){
+  cx.strokeStyle=col;cx.fillStyle=col;cx.lineWidth=2.2;cx.lineCap='round';cx.lineJoin='round';
+  if(sym==='△'){cx.beginPath();cx.moveTo(x,y-r);cx.lineTo(x-r*.87,y+r*.5);cx.lineTo(x+r*.87,y+r*.5);cx.closePath();cx.stroke();}
+  else if(sym==='○'){cx.beginPath();cx.arc(x,y,r*.75,0,Math.PI*2);cx.stroke();}
+  else if(sym==='□'){const s=r*.7;cx.strokeRect(x-s,y-s,s*2,s*2);}
+  else if(sym==='✕'){const s=r*.6;cx.beginPath();cx.moveTo(x-s,y-s);cx.lineTo(x+s,y+s);cx.stroke();cx.beginPath();cx.moveTo(x+s,y-s);cx.lineTo(x-s,y+s);cx.stroke();}
+  else if(sym==='+'){const s=r*.7;cx.beginPath();cx.moveTo(x,y-s);cx.lineTo(x,y+s);cx.stroke();cx.beginPath();cx.moveTo(x-s,y);cx.lineTo(x+s,y);cx.stroke();}
+  else if(sym==='∇'){cx.beginPath();cx.moveTo(x,y+r);cx.lineTo(x-r*.87,y-r*.5);cx.lineTo(x+r*.87,y-r*.5);cx.closePath();cx.stroke();}
+  else if(sym==='✱'){const s=r*.7;for(let i=0;i<3;i++){const a=Math.PI*i/3;cx.beginPath();cx.moveTo(x-s*Math.cos(a),y-s*Math.sin(a));cx.lineTo(x+s*Math.cos(a),y+s*Math.sin(a));cx.stroke();}}
+  else if(sym==='≈'){const s=r*.55;cx.beginPath();cx.moveTo(x-s,y-4);cx.lineTo(x+s,y-4);cx.stroke();cx.beginPath();cx.moveTo(x-s,y+4);cx.lineTo(x+s,y+4);cx.stroke();}
+  else if(sym==='ε'){cx.font=`bold ${r*1.9}px Georgia`;cx.textAlign='center';cx.textBaseline='middle';cx.fillText('ε',x,y);}
+  else if(sym==='Φ'){cx.font=`bold ${r*2}px Georgia`;cx.textAlign='center';cx.textBaseline='middle';cx.fillText('Φ',x,y);}
+  else if(sym==='?'){cx.font=`bold ${r*1.6}px Georgia`;cx.textAlign='center';cx.textBaseline='middle';cx.fillText('?',x,y);}
+  else{cx.font=`bold ${r*1.6}px Georgia`;cx.textAlign='center';cx.textBaseline='middle';cx.fillText(sym,x,y);}
+}
+
+function submitPid(){
+  const pid=document.getElementById('inp-pid').value.trim();
+  if(!pid){document.getElementById('pid-err').textContent='Please enter your Prolific ID.';return;}
+  STATE.participantId=pid;
+  STATE.includeBdi=false;
+  STATE.includeStai=false;
+  const vo=Math.random()<.5?['increasing','decreasing']:['decreasing','increasing'];
+  STATE.counterbalance=vo[0].slice(0,3)+'-'+vo[1].slice(0,3);
+  STATE.blockDefs=[
+    {id:'1a',variance:'constant',cueMode:'none',symbols:null,trials:10,section:1,clickCost:1},
+    {id:'1b',variance:vo[0],cueMode:'none',symbols:null,trials:10,section:1,clickCost:1},
+    {id:'1c',variance:vo[1],cueMode:'none',symbols:null,trials:10,section:1,clickCost:1},
+    {id:'2a',variance:'constant',cueMode:'random',symbols:SYM_A,trials:10,section:2,clickCost:1},
+    {id:'2b',variance:'constant',cueMode:'staggered',symbols:SYM_B,trials:10,section:2,clickCost:1},
+    {id:'2c',variance:'constant',cueMode:'staggered_c',symbols:SYM_C,trials:10,section:2,clickCost:5},
+  ];showScreen('scr-info');
+}
+function submitConsent(){
+  if(!['c1','c2','c3','c4','c5'].every(i=>document.getElementById(i).checked)||!document.getElementById('inp-sig').value.trim()){document.getElementById('consent-err').textContent='Please tick all boxes and provide your initials if you would like to continue.';return;}
+  STATE.consentTimestamp=new Date().toISOString();
+  downloadConsent();
+  showScreen('scr-instructions');
+}
+function downloadConsent(){const sig=document.getElementById('inp-sig').value.trim();const csv=['field,value','prolific_id,'+STATE.participantId,'consent_timestamp,'+STATE.consentTimestamp,'c1_read_information_sheet,Yes','c2_voluntary_participation,Yes','c3_data_anonymised_gdpr,Yes','c4_open_access_sharing,Yes','c5_agree_to_take_part,Yes','digital_signature,'+sig].join('\n');const filename='p'+STATE.participantId+'_consent.csv';fetch("https://pipe.jspsych.org/api/data/",{method:"POST",headers:{"Content-Type":"application/json",Accept:"*/*"},keepalive:true,body:JSON.stringify({experimentID:"Kda7DZI5NFVg",filename:filename,data:csv})}).catch(()=>{});}
+function submitQuiz(){STATE.quizAttempts++;const ans={q1:'c',q2:'c',q3:'a',q4:'c',q5:'a',q6:'c'};let pass=true;for(const[n,a]of Object.entries(ans)){const s=document.querySelector('input[name="'+n+'"]:checked');if(!s||s.value!==a)pass=false;}if(pass){STATE.quizPassed=true;advanceToNextBlock();}else{document.getElementById('quiz-err').textContent='Not quite — please check your answers and try again.';}}
+
+function newTrial(bd,trialNum,globalNum,isPractice){
+  const rewards={},cues={};
+  let d1syms=null;
+  if(bd.symbols){d1syms=bd.symbols.slice();for(let i=d1syms.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d1syms[i],d1syms[j]]=[d1syms[j],d1syms[i]];}}
+  for(let n=0;n<GRAPH.nodeCount;n++){
+    if(n===0){rewards[n]=0;cues[n]='';continue;}
+    const d=GRAPH.depth[n];
+    if(bd.cueMode==='none'){cues[n]='?';rewards[n]=gaussInt(0,DEPTH_SD[bd.variance][d]*2);}
+    else{const d1i=GRAPH.d1.indexOf(n);const sym=d1i>=0?d1syms[d1i]:bd.symbols[Math.floor(Math.random()*4)];cues[n]=sym;
+      if(bd.cueMode==='random')rewards[n]=gaussInt(0,6);
+      else if(bd.cueMode==='staggered')rewards[n]=gaussInt(MEANS_B[sym],SD_B);
+      else if(bd.cueMode==='staggered_c')rewards[n]=gaussInt(MEANS_C[sym],SD_C);
+    }
+  }
+  return{blockId:bd.id,variance:bd.variance,cueMode:bd.cueMode,trialNum,globalNum,isPractice,rewards,cues,revealed:{0:true},clicks:[],clickTimestamps:[],phase:'search',currentNode:0,route:[0],moveTimestamps:[],trialStartTime:ts(),score:null};
+}
+
+function computePathValues(t){return GRAPH.paths.map(p=>{let v=0;for(let i=1;i<p.length;i++)v+=t.rewards[p[i]];return v})}
+function computeOptimal(r){let b=-Infinity,bp=null;GRAPH.paths.forEach(p=>{let v=0;for(let i=1;i<p.length;i++)v+=r[p[i]];if(v>b){b=v;bp=p;}});return{score:b,path:bp}}
+function computeOptimalDepth(r,depth){let b=-Infinity,bp=null;GRAPH.paths.forEach(p=>{const sub=p.slice(0,depth+1);let v=0;for(let i=1;i<sub.length;i++)v+=r[sub[i]];if(v>b){b=v;bp=sub;}});return{score:b,path:bp}}
+function canExecute(t){for(let n=1;n<GRAPH.nodeCount;n++)if(t.revealed[n])return true;return false}
+function getFrontier(t){if(t.phase!=='search')return[];const f=[];for(let n=0;n<GRAPH.nodeCount;n++){if(t.revealed[n])continue;if(GRAPH.parent[n]!==null&&t.revealed[GRAPH.parent[n]])f.push(n);}return f}
+
+function recordEvent(phase,evType,nid,trial,extra){
+  const bd=STATE.blockDefs[STATE.currentBlockIdx]||{id:'practice',variance:'practice',cueMode:'none'};
+  const pv=computePathValues(trial);const sorted=pv.slice().sort((a,b)=>b-a);const frontier=getFrontier(trial);
+  const bestIdx=pv.indexOf(Math.max(...pv));let onBest='';if(nid!==null&&evType==='click')onBest=GRAPH.paths[bestIdx].includes(nid)?1:0;
+  const sr=[],sc=[];for(let n=0;n<GRAPH.nodeCount;n++){sr.push(trial.rewards[n]);sc.push(trial.cues[n]||'');}
+  const row={prolific_id:STATE.participantId,block_id:STATE.isPractice?'practice':bd.id,block_number:STATE.isPractice?0:STATE.currentBlockIdx+1,block_variance:STATE.isPractice?'practice':bd.variance,block_cue_mode:STATE.isPractice?'none':bd.cueMode,block_click_cost:bd.clickCost||1,trial_in_block:trial.trialNum,trial_global:trial.globalNum,is_practice:trial.isPractice?1:0,phase,event_type:evType,event_timestamp_ms:ts(),event_time_in_trial_ms:ts()-trial.trialStartTime,node_id:nid!==null?nid:'',node_depth:nid!==null?GRAPH.depth[nid]:'',node_value:(nid!==null&&trial.revealed[nid])?trial.rewards[nid]:'',node_cue:(nid!==null&&nid!==0)?trial.cues[nid]:'',node_cue_text:(nid!==null&&nid!==0)?(SYM_SAFE[trial.cues[nid]]||trial.cues[nid]||''):'',click_number:trial.clicks.length,frontier_nodes:frontier.join('|'),frontier_size:frontier.length,n_revealed:Object.keys(trial.revealed).length,is_on_best_path:onBest,path_values:pv.join('|'),best_path_value:sorted[0],state_rewards:sr.join('|'),state_cues:sc.join('|'),state_cues_text:sc.map(s=>SYM_SAFE[s]||s||'').join('|')};
+  Object.assign(row,extra||{});STATE.events.push(row);
+}
+
+const canvas=document.getElementById('task-canvas'),ctx=canvas.getContext('2d'),NR=22;
+function drawTrial(trial){
+  ctx.clearRect(0,0,canvas.width,canvas.height);const frontier=getFrontier(trial);
+  for(const[p,kids]of Object.entries(GRAPH.children))for(const k of kids){const[x1,y1]=GRAPH.pos[p],[x2,y2]=GRAPH.pos[k];const dx=x2-x1,dy=y2-y1,l=Math.sqrt(dx*dx+dy*dy),ux=dx/l,uy=dy/l;const sx=x1+ux*NR,sy=y1+uy*NR,ex=x2-ux*NR,ey=y2-uy*NR;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.strokeStyle='#aaa';ctx.lineWidth=1.5;ctx.stroke();const h=8,a=Math.atan2(ey-sy,ex-sx);ctx.beginPath();ctx.moveTo(ex,ey);ctx.lineTo(ex-h*Math.cos(a-.4),ey-h*Math.sin(a-.4));ctx.lineTo(ex-h*Math.cos(a+.4),ey-h*Math.sin(a+.4));ctx.closePath();ctx.fillStyle='#aaa';ctx.fill();}
+  for(let n=0;n<GRAPH.nodeCount;n++){
+    const[x,y]=GRAPH.pos[n];const rev=trial.revealed[n],click=frontier.includes(n),cur=(trial.phase==='execute'&&trial.currentNode===n),onR=(trial.phase==='done'&&trial.route.includes(n));
+    ctx.beginPath();ctx.arc(x,y,NR,0,Math.PI*2);
+    if(cur)ctx.fillStyle='#2ecc71';else if(onR)ctx.fillStyle='#aed6f1';else if(n===0)ctx.fillStyle='#a9cce3';
+    else if(rev){ctx.fillStyle='#e8f5e9';}
+    else if(click&&trial.phase==='search')ctx.fillStyle='#fdebd0';else ctx.fillStyle='#e8e8e8';
+    ctx.fill();
+    if(cur){ctx.strokeStyle='#111';ctx.lineWidth=3;}
+    else{ctx.strokeStyle=(click&&trial.phase==='search')?'#e67e22':'#888';ctx.lineWidth=(click&&trial.phase==='search')?2.5:1.5;}
+    ctx.stroke();
+    if(n===0){ctx.fillStyle='#1a5276';ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();}
+    else if(rev){const v=trial.rewards[n];ctx.font='bold 14px Georgia';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#222';ctx.fillText((v>0?'+':'')+v,x,y);}
+    else{drawSymbol(ctx,trial.cues[n],x,y,13,(click&&trial.phase==='search')?'#8B4513':'#888');}
+  }
+  if(trial.phase==='execute'){const moves=GRAPH.arrowMap[trial.currentNode];if(moves)for(const[d,t]of Object.entries(moves)){if(!trial.revealed[t])continue;const[tx,ty]=GRAPH.pos[t],[cx2,cy2]=GRAPH.pos[trial.currentNode];const mx=(cx2+tx)/2,my=(cy2+ty)/2,sz=7;ctx.beginPath();if(d==='ArrowUp'){ctx.moveTo(mx,my-sz);ctx.lineTo(mx-sz,my+sz);ctx.lineTo(mx+sz,my+sz);}else if(d==='ArrowDown'){ctx.moveTo(mx,my+sz);ctx.lineTo(mx-sz,my-sz);ctx.lineTo(mx+sz,my-sz);}else if(d==='ArrowLeft'){ctx.moveTo(mx-sz,my);ctx.lineTo(mx+sz,my-sz);ctx.lineTo(mx+sz,my+sz);}else{ctx.moveTo(mx+sz,my);ctx.lineTo(mx-sz,my-sz);ctx.lineTo(mx-sz,my+sz);}ctx.closePath();ctx.fillStyle='#2a5a8a';ctx.fill();}}
+}
+
+canvas.addEventListener('click',function(e){const t=STATE.trial;if(!t||t.phase!=='search')return;const rect=canvas.getBoundingClientRect(),mx=(e.clientX-rect.left)*(canvas.width/rect.width),my=(e.clientY-rect.top)*(canvas.height/rect.height);const frontier=getFrontier(t);for(const nid of frontier){const[nx,ny]=GRAPH.pos[nid];if(Math.sqrt((mx-nx)**2+(my-ny)**2)<=NR+4){t.revealed[nid]=true;t.clicks.push(nid);t.clickTimestamps.push(ts());recordEvent('search','click',nid,t,{});document.getElementById('btn-execute').style.display=canExecute(t)?'inline-block':'none';drawTrial(t);updateStatus();return;}}});
+function executePhase(){const t=STATE.trial;if(!canExecute(t))return;t.phase='execute';recordEvent('search','stop',null,t,{});document.getElementById('btn-execute').style.display='none';drawTrial(t);updateStatus();}
+document.addEventListener('keydown',function(e){const t=STATE.trial;if(!t||t.phase!=='execute')return;if(e.key===' '||e.key==='Spacebar'){e.preventDefault();recordEvent('execute','stop_here',t.currentNode,t,{});endTrial();return;}const moves=GRAPH.arrowMap[t.currentNode];if(!moves||moves[e.key]===undefined)return;e.preventDefault();const target=moves[e.key];if(!t.revealed[target])return;t.currentNode=target;t.route.push(target);t.moveTimestamps.push(ts());recordEvent('execute','move',target,t,{});const hasRevChild=GRAPH.children[target]&&GRAPH.children[target].some(c=>t.revealed[c]);if(GRAPH.terminals.includes(target)||!hasRevChild)endTrial();else{drawTrial(t);updateStatus();}});
+
+function endTrial(){
+  const t=STATE.trial;t.phase='done';let pathReward=0;for(let i=1;i<t.route.length;i++)pathReward+=t.rewards[t.route[i]];
+  const bd=STATE.blockDefs[STATE.currentBlockIdx]||{clickCost:1};const cc=t.clicks.length*bd.clickCost;t.score=pathReward-cc;if(!t.isPractice){STATE.totalScore+=t.score;const bid=bd.id;STATE.blockScores[bid]=(STATE.blockScores[bid]||0)+t.score;}
+  const od1=computeOptimalDepth(t.rewards,1);const od2=computeOptimalDepth(t.rewards,2);const od3=computeOptimalDepth(t.rewards,3);const sb=GRAPH.d1.filter(n=>t.revealed[n]).length;const md=Math.max(...t.clicks.map(n=>GRAPH.depth[n]),0);
+  const symClicks={};t.clicks.forEach(n=>{const s=t.cues[n];if(s&&s!=='?')symClicks[s]=(symClicks[s]||0)+1;});
+  recordEvent('terminate','end_trial',null,t,{route:t.route.join('|'),route_values:t.route.map(n=>t.rewards[n]).join('|'),path_reward:pathReward,click_cost:cc,trial_score:t.score,n_clicks:t.clicks.length,optimal_d1_path:od1.path.join('|'),optimal_d1_values:od1.path.map(n=>t.rewards[n]).join('|'),optimal_d1_reward:od1.score,optimal_d1_net:od1.score-1*bd.clickCost,optimal_d2_path:od2.path.join('|'),optimal_d2_values:od2.path.map(n=>t.rewards[n]).join('|'),optimal_d2_reward:od2.score,optimal_d2_net:od2.score-2*bd.clickCost,optimal_d3_path:od3.path.join('|'),optimal_d3_values:od3.path.map(n=>t.rewards[n]).join('|'),optimal_d3_reward:od3.score,optimal_d3_net:od3.score-3*bd.clickCost,route_depth:t.route.length-1,search_breadth:sb,max_search_depth:md,trial_duration_ms:ts()-t.trialStartTime,all_clicks:t.clicks.join('|'),symbol_clicks:JSON.stringify(symClicks),symbol_clicks_text:JSON.stringify(Object.fromEntries(Object.entries(symClicks).map(([k,v])=>[SYM_SAFE[k]||k,v])))});
+  drawTrial(t);document.getElementById('task-status').innerHTML='<span class="phase-label phase-done">Trial complete</span> Path: '+(pathReward>0?'+':'')+pathReward+' − '+cc+' clicks = <strong>'+(t.score>0?'+':'')+t.score+'</strong>';
+  if(!t.isPractice){const bid=(STATE.blockDefs[STATE.currentBlockIdx]||{id:''}).id;document.getElementById('task-score-box').style.display='inline-block';document.getElementById('task-score-box').textContent='Score: '+(STATE.blockScores[bid]||0);}
+  setTimeout(nextTrial,2000);
+}
+function updateStatus(){const t=STATE.trial,el=document.getElementById('task-status');const cost=(STATE.blockDefs[STATE.currentBlockIdx]||{clickCost:1}).clickCost;if(t.phase==='search'){el.innerHTML='<span class="phase-label phase-plan">Search</span> Click to reveal (\u2212'+cost+' each). Clicks: '+t.clicks.length;}else if(t.phase==='execute')el.innerHTML='<span class="phase-label phase-act">Execute</span> Use <strong>arrow keys</strong> to navigate. Press <strong>spacebar</strong> when navigating if you would like to stop at your current location.';}
+
+function startPractice(){STATE.isPractice=true;STATE.currentTrialInBlock=0;nextTrial();}
+function nextTrial(){
+  if(STATE.isPractice){STATE.currentTrialInBlock++;if(STATE.currentTrialInBlock>CONFIG.practiceTrials){STATE.isPractice=false;showScreen('scr-quiz');return;}STATE.globalTrialNum++;STATE.trial=newTrial({id:'practice',variance:'constant',cueMode:'none',symbols:null,trials:2},STATE.currentTrialInBlock,STATE.globalTrialNum,true);}
+  else{STATE.currentTrialInBlock++;const bd=STATE.blockDefs[STATE.currentBlockIdx];if(STATE.currentTrialInBlock>bd.trials){showScreen('scr-strategy');return;}STATE.globalTrialNum++;STATE.trial=newTrial(bd,STATE.currentTrialInBlock,STATE.globalTrialNum,false);}
+  showScreen('scr-task');document.getElementById('btn-execute').style.display='none';
+  const bd=STATE.blockDefs[STATE.currentBlockIdx];
+  if(!STATE.isPractice&&bd){document.getElementById('task-block-label').textContent='Block '+(STATE.currentBlockIdx+1)+' of 6 — Trial '+STATE.currentTrialInBlock+'/'+bd.trials;if(STATE.currentTrialInBlock===1){document.getElementById('task-score-box').style.display='inline-block';document.getElementById('task-score-box').textContent='Score: 0';}}
+  else{document.getElementById('task-block-label').textContent='Practice '+STATE.currentTrialInBlock+'/'+CONFIG.practiceTrials;document.getElementById('task-score-box').style.display='none';}
+  drawTrial(STATE.trial);updateStatus();
+}
+function advanceToNextBlock(){STATE.currentBlockIdx++;if(STATE.currentBlockIdx>=STATE.blockDefs.length){showScreen('scr-crt');return;}STATE.currentTrialInBlock=0;const bd=STATE.blockDefs[STATE.currentBlockIdx];const bi=STATE.currentBlockIdx;document.getElementById('block-intro-title').textContent='Block '+(bi+1)+' of 6';let desc='';if(bi===0){desc='<p>Click locations to reveal values (-1 point per click), then press \x27Execute plan\x27 and navigate using the arrow keys on your keyboard to collect revealed values.</p><p>If you want to stop collecting values early, use the spacebar to stop where you are.</p>';}else if(bi===1){desc='<p><strong>We\x27re now going to change the locations of values</strong>.</p><p>Again, click locations to reveal values (-1 point per click), then press \x27Execute plan\x27 and navigate using the arrow keys on your keyboard to collect revealed values.</p><p>If you want to stop collecting values early, use the spacebar to stop where you are.</p>';}else if(bi===2){desc='<p><strong>We\x27re now going to change the locations of values again</strong>.</p><p>Click locations to reveal values (-1 point per click), then press \x27Execute plan\x27 and navigate using the arrow keys on your keyboard to collect revealed values.</p><p>If you want to stop collecting values early, use the spacebar to stop where you are.</p>';}else if(bi===3){desc='<p>The locations will now display <strong>symbols</strong> instead of question marks. Pay very close attention to the symbols because they <strong>may help you to predict the hidden reward values</strong>.</p><p>Again, click locations to reveal values (-1 point per click), then press \x27Execute plan\x27 and navigate using the arrow keys on your keyboard to collect revealed values.</p><p>As usual, if you want to stop collecting values early, use the spacebar to stop where you are.</p>';}else if(bi===4){desc='<p><strong>We\x27re now going to change the locations of values</strong>.</p><p>The locations will again display <strong>symbols</strong>. Pay close attention to them because they <strong>may help you to predict the hidden reward values</strong>.</p><p>Click locations to reveal values (-1 per click), then press \x27Execute plan\x27 and navigate using the arrow keys on your keyboard to collect the values.</p><p>As usual, if you want to stop collecting values early, use the spacebar to stop where you are.</p>';}else if(bi===5){desc='<p><strong>We\x27re now going to change the cost of a click from -1 to -5 points</strong>.</p><p>The locations will again display <strong>symbols</strong>. Pay close attention to them because they <strong>may help you to predict the hidden reward values</strong>.</p><p>Click locations to reveal values (now <strong>-5 points per click</strong>), then press \x27Execute plan\x27 and navigate using the arrow keys on your keyboard to collect revealed values.</p><p>If you want to stop navigating early, use the spacebar to stop where you are.</p>';}desc+='<p>There are <strong>'+bd.trials+' trials</strong> in this block.</p>';document.getElementById('block-intro-text').innerHTML=desc;const needsCC=(bi===1||bi===2||bi===3||bi===4||bi===5);if(bi===1||bi===2){STATE._ccAnswer='a';document.getElementById('bcc-question').textContent='What will change in this block, compared to the previous block?';document.getElementById('bcc-opt-a').textContent='The location of the values';document.getElementById('bcc-opt-b').textContent='The number of locations';document.getElementById('bcc-opt-c').textContent='The cost of clicking';}else if(bi===3){STATE._ccAnswer='b';document.getElementById('bcc-question').textContent='What will change in this next block?';document.getElementById('bcc-opt-a').textContent='The number of locations in the network will increase significantly';document.getElementById('bcc-opt-b').textContent='The question marks will be replaced with symbols which may provide hints as to the location of values';document.getElementById('bcc-opt-c').textContent='The cost of clicking on each location will be reduced to zero points';}else if(bi===4){STATE._ccAnswer='a';document.getElementById('bcc-question').textContent='This block will again show symbols. So, what has changed?';document.getElementById('bcc-opt-a').textContent='The location of the values';document.getElementById('bcc-opt-b').textContent='The cost of clicking on each location';document.getElementById('bcc-opt-c').textContent='The number of locations in the network';}else if(bi===5){STATE._ccAnswer='c';document.getElementById('bcc-question').textContent='What will change in this block, compared to the previous block?';document.getElementById('bcc-opt-a').textContent='The location of the values';document.getElementById('bcc-opt-b').textContent='The number of locations';document.getElementById('bcc-opt-c').textContent='The cost of clicking';}const ccBox=document.getElementById('block-intro-cc');const btn=document.getElementById('btn-start-block');ccBox.style.display=needsCC?'block':'none';document.getElementById('bcc-err').textContent='';const prev=document.querySelector('input[name="bcc"]:checked');if(prev)prev.checked=false;if(needsCC){btn.disabled=true;btn.style.background='#999';}else{btn.disabled=false;btn.style.background='#2a5a8a';}showScreen('scr-block-intro');}
+function startBlock(){STATE.currentTrialInBlock=0;document.getElementById('task-score-box').textContent='Score: 0';nextTrial();}
+function submitStrategy(){STATE.strategyComments.push({block:STATE.currentBlockIdx+1,blockId:STATE.blockDefs[STATE.currentBlockIdx].id,text:document.getElementById('strategy-text').value.trim()});document.getElementById('strategy-text').value='';const bd=STATE.blockDefs[STATE.currentBlockIdx];if(bd.section===2)startValEst();else if(STATE.currentBlockIdx===2)showScreen('scr-section-break');else showScreen('scr-separator');}
+
+// VALUE ESTIMATION
+let VE=null;
+function startValEst(){const bd=STATE.blockDefs[STATE.currentBlockIdx];const syms=bd.symbols.slice();for(let i=syms.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[syms[i],syms[j]]=[syms[j],syms[i]];}VE={syms:syms,idx:0,responses:[],blockId:bd.id};showScreen('scr-val-est');showValEst();}
+function showValEst(){if(VE.idx>=VE.syms.length){STATE.valEstData.push(...VE.responses);startPairedChoice();return;}const sym=VE.syms[VE.idx];const cv=document.getElementById('ve-sym-cv').getContext('2d');cv.clearRect(0,0,60,60);drawSymbol(cv,sym,30,30,22,'#444');document.getElementById('ve-progress').textContent='Symbol '+(VE.idx+1)+' of '+VE.syms.length;document.getElementById('ve-value').value='';document.getElementById('ve-conf').value=5;document.getElementById('ve-conf').style.opacity='0.35';document.getElementById('ve-conf').dataset.touched='';document.getElementById('ve-err').textContent='';VE.showTime=ts();}
+function getTrueMean(sym,blockId){if(blockId==='2b'&&MEANS_B[sym]!==undefined)return MEANS_B[sym];if(blockId==='2c'&&MEANS_C[sym]!==undefined)return MEANS_C[sym];return 0;}
+function submitValEst(){const val=document.getElementById('ve-value').value.trim();if(val===''||isNaN(parseInt(val))){document.getElementById('ve-err').textContent='Please enter a number.';return;}if(!document.getElementById('ve-conf').dataset.touched){document.getElementById('ve-err').textContent='Please select a confidence level to continue.';return;}const sym=VE.syms[VE.idx];VE.responses.push({block_id:VE.blockId,symbol:sym,estimated_value:parseInt(val),true_mean:getTrueMean(sym,VE.blockId),confidence:parseInt(document.getElementById('ve-conf').value),rt_ms:ts()-VE.showTime});VE.idx++;showValEst();}
+
+// PAIRED CHOICE
+let PC=null;
+function genPairs(syms){const pairs=[];for(let i=0;i<syms.length;i++)for(let j=i+1;j<syms.length;j++)pairs.push([syms[i],syms[j]]);for(let i=pairs.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pairs[i],pairs[j]]=[pairs[j],pairs[i]];}return pairs.map(p=>Math.random()<.5?p:[p[1],p[0]]);}
+function startPairedChoice(){const bd=STATE.blockDefs[STATE.currentBlockIdx];PC={pairs:genPairs(bd.symbols),idx:0,responses:[],blockId:bd.id,cueMode:bd.cueMode,chosenSide:null};showScreen('scr-pairs');showPair();}
+function showPair(){if(PC.idx>=PC.pairs.length){finishPC();return;}const[left,right]=PC.pairs[PC.idx];const lc=document.getElementById('pair-left-cv').getContext('2d'),rc=document.getElementById('pair-right-cv').getContext('2d');lc.clearRect(0,0,90,90);rc.clearRect(0,0,90,90);drawSymbol(lc,left,45,45,32,'#444');drawSymbol(rc,right,45,45,32,'#444');document.getElementById('pairs-progress').textContent='Pair '+(PC.idx+1)+' of '+PC.pairs.length;document.getElementById('pairs-conf-area').style.display='none';document.getElementById('pair-left-box').classList.remove('chosen');document.getElementById('pair-right-box').classList.remove('chosen');document.getElementById('conf-slider').value=5;document.getElementById('conf-slider').style.opacity='0.35';document.getElementById('conf-slider').dataset.touched='';document.getElementById('pairs-conf-err').textContent='';PC.chosenSide=null;PC.choiceStart=ts();}
+function pairChoice(side){if(!PC||PC.chosenSide)return;PC.chosenSide=side;PC.choiceRT=ts()-PC.choiceStart;document.getElementById(side==='left'?'pair-left-box':'pair-right-box').classList.add('chosen');document.getElementById('pairs-conf-area').style.display='block';PC.confStart=ts();}
+function submitPairConf(){if(!document.getElementById('conf-slider').dataset.touched){document.getElementById('pairs-conf-err').textContent='Please select a confidence level to continue.';return;}document.getElementById('pairs-conf-err').textContent='';const[left,right]=PC.pairs[PC.idx];const chosen=PC.chosenSide==='left'?left:right;const other=PC.chosenSide==='left'?right:left;const conf=parseInt(document.getElementById('conf-slider').value);let correct=null;if(PC.cueMode==='staggered')correct=MEANS_B[chosen]>=MEANS_B[other]?1:0;else if(PC.cueMode==='staggered_c')correct=MEANS_C[chosen]>=MEANS_C[other]?1:0;PC.responses.push({block_id:PC.blockId,pair_num:PC.idx+1,left,right,chosen,other,chosen_side:PC.chosenSide,correct,confidence:conf,rt_choice_ms:PC.choiceRT,rt_conf_ms:ts()-PC.confStart});PC.chosenSide=null;PC.idx++;showPair();}
+function finishPC(){STATE.pairedChoiceData.push(...PC.responses);if(STATE.currentBlockIdx<STATE.blockDefs.length-1)showScreen('scr-separator');else advanceToNextBlock();}
+function checkBlockCC(){const s=document.querySelector('input[name="bcc"]:checked');if(s&&s.value===STATE._ccAnswer){document.getElementById('bcc-err').textContent='';document.getElementById('btn-start-block').disabled=false;document.getElementById('btn-start-block').style.background='#2a5a8a';}else if(s){document.getElementById('bcc-err').textContent='Not quite \u2014 try again.';}}
+
+// CRT
+function submitCrt(){const r1=document.getElementById('crt1').value.trim(),r2=document.getElementById('crt2').value.trim(),r3=document.getElementById('crt3').value.trim();if(!r1||!r2||!r3){document.getElementById('crt-err').textContent='Please enter a value for each question to continue.';return;}document.getElementById('crt-err').textContent='';STATE.crt={item1_response:r1,item1_correct:(/^5$|^0?\.?05$|^5p$/).test(r1.replace(/[£p\s]/g,''))?1:0,item2_response:r2,item2_correct:(/^5$/).test(r2.replace(/[^\d]/g,''))?1:0,item3_response:r3,item3_correct:(/^47$/).test(r3.replace(/[^\d]/g,''))?1:0};STATE.crt.total=STATE.crt.item1_correct+STATE.crt.item2_correct+STATE.crt.item3_correct;showScreen('scr-digit-fwd-intro');}
+
+// DIGIT SPAN
+let DDATA=null,DSTATE=null;
+function makeSeq(len){const pool=[0,1,2,3,4,5,6,7,8,9],seq=[],p=pool.slice();for(let i=0;i<len;i++){const j=Math.floor(Math.random()*p.length);seq.push(p[j]);p.splice(j,1);}return seq;}
+document.getElementById('digit-check-input').addEventListener('input',function(){const btn=document.getElementById('digit-check-btn');const val=this.value.trim().replace(/\s+/g,'');if(val==='619'){btn.disabled=false;btn.style.background='#27ae60';document.getElementById('fwd-err').textContent='';}else if(val.length>=3){document.getElementById('fwd-err').textContent='Not quite \u2014 remember, same order.';btn.disabled=true;btn.style.background='#999';}else{btn.disabled=true;btn.style.background='#999';}});
+function startForwardSpan(){const fwd=[],bwd=[];for(let l=3;l<=9;l++){fwd.push({length:l,trial:1,digits:makeSeq(l)});fwd.push({length:l,trial:2,digits:makeSeq(l)});}for(let l=2;l<=8;l++){bwd.push({length:l,trial:1,digits:makeSeq(l)});bwd.push({length:l,trial:2,digits:makeSeq(l)});}DDATA={forward:fwd,backward:bwd};DSTATE={mode:'forward',idx:0,fails:0,fScore:0,bScore:0,fMax:0,bMax:0,results:[]};showScreen('scr-digit-fwd-task');runDigit();}
+document.getElementById('bwd-check').addEventListener('input',function(){const btn=document.getElementById('bwd-check-btn');if(this.value.trim().replace(/\s+/g,'')==='273'){btn.disabled=false;btn.style.background='#27ae60';document.getElementById('bwd-err').textContent='';}else if(this.value.trim().length>=3){document.getElementById('bwd-err').textContent='Not quite \u2014 remember, reverse order.';btn.disabled=true;btn.style.background='#999';}});
+function startBackwardSpan(){DSTATE.mode='backward';DSTATE.idx=0;DSTATE.fails=0;showScreen('scr-digit-bwd-task');runDigit();}
+function _dEl(id){return document.getElementById(DSTATE.mode==='forward'?id:id+'-bwd');}
+function runDigit(){const trials=DSTATE.mode==='forward'?DDATA.forward:DDATA.backward;if(DSTATE.idx>=trials.length||DSTATE.fails>=2){if(DSTATE.mode==='forward'){showScreen('scr-digit-bwd-intro');return;}else{STATE.digitSpan={forward:DSTATE.fScore,backward:DSTATE.bScore,total:DSTATE.fScore+DSTATE.bScore,forwardMax:DSTATE.fMax,backwardMax:DSTATE.bMax,raw:DSTATE.results};afterDigitSpan();return;}}const t=trials[DSTATE.idx];_dEl('digit-feedback').textContent='';_dEl('digit-input').style.display='none';_dEl('digit-input').value='';_dEl('digit-submit-btn').style.display='none';_dEl('digit-next-btn').style.display='none';const disp=_dEl('digit-display');disp.textContent='';disp.style.background='#fdebd0';disp.style.fontSize='2.9em';let idx=0;const iv=setInterval(()=>{if(idx<t.digits.length){disp.textContent=t.digits[idx];idx++;}else{clearInterval(iv);disp.textContent='';disp.style.fontSize='1em';disp.style.background='none';_dEl('digit-input').style.display='block';_dEl('digit-input').focus();_dEl('digit-submit-btn').style.display='inline-block';_dEl('digit-submit-btn').style.background='#2a5a8a';}},1000);}
+function submitDigitTrial(){const resp=_dEl('digit-input').value.trim().replace(/\s+/g,'');if(!resp){_dEl('digit-feedback').textContent='Please enter a value to continue.';_dEl('digit-feedback').style.color='#c00';return;}_dEl('digit-feedback').style.color='';const trials=DSTATE.mode==='forward'?DDATA.forward:DDATA.backward;const t=trials[DSTATE.idx];const expected=DSTATE.mode==='forward'?t.digits.join(''):t.digits.slice().reverse().join('');const correct=(resp===expected);DSTATE.results.push({mode:DSTATE.mode,length:t.length,trial:t.trial,presented:t.digits.join(''),expected,response:resp,correct});if(correct){DSTATE.fails=0;if(DSTATE.mode==='forward'){DSTATE.fScore++;DSTATE.fMax=Math.max(DSTATE.fMax,t.length);}else{DSTATE.bScore++;DSTATE.bMax=Math.max(DSTATE.bMax,t.length);}_dEl('digit-feedback').textContent='Correct!';}else{if(t.trial===2){const prev=DSTATE.results.find(r=>r.mode===DSTATE.mode&&r.length===t.length&&r.trial===1);if(prev&&!prev.correct)DSTATE.fails=2;}_dEl('digit-feedback').textContent='Incorrect. Answer was: '+expected;}_dEl('digit-submit-btn').style.display='none';_dEl('digit-next-btn').style.display='inline-block';}
+function nextDigitTrial(){DSTATE.idx++;runDigit();}
+
+// BDI/STAI (optional)
+const BDI_ITEMS=[{n:'Sadness',o:['I do not feel sad.','I feel sad much of the time.','I am sad all the time.','I am so sad or unhappy that I can\'t stand it.']},{n:'Pessimism',o:['I am not discouraged about my future.','I feel more discouraged about my future than I used to.','I do not expect things to work out for me.','I feel my future is hopeless and will only get worse.']},{n:'Past failure',o:['I do not feel like a failure.','I have failed more than I should have.','As I look back, I see a lot of failures.','I feel I am a total failure as a person.']},{n:'Loss of pleasure',o:['I get as much pleasure as I ever did from the things I enjoy.','I don\'t enjoy things as much as I used to.','I get very little pleasure from the things I used to enjoy.','I can\'t get any pleasure from the things I used to enjoy.']},{n:'Guilty feelings',o:['I don\'t feel particularly guilty.','I feel guilty over many things I have done or should have done.','I feel quite guilty most of the time.','I feel guilty all of the time.']},{n:'Punishment feelings',o:['I don\'t feel I am being punished.','I feel I may be punished.','I expect to be punished.','I feel I am being punished.']},{n:'Self-dislike',o:['I feel the same about myself as ever.','I have lost confidence in myself.','I am disappointed in myself.','I dislike myself.']},{n:'Self-criticalness',o:['I don\'t criticise or blame myself more than usual.','I am more critical of myself than I used to be.','I criticise myself for all of my faults.','I blame myself for everything bad that happens.']},{n:'Suicidal thoughts',o:['I don\'t have any thoughts of killing myself.','I have thoughts of killing myself, but I would not carry them out.','I would like to kill myself.','I would kill myself if I had the chance.']},{n:'Crying',o:['I don\'t cry any more than I used to.','I cry more than I used to.','I cry over every little thing.','I feel like crying, but I can\'t.']},{n:'Agitation',o:['I am no more restless or wound up than usual.','I feel more restless or wound up than usual.','I am so restless or agitated that it\'s hard to stay still.','I am so restless or agitated that I have to keep moving or doing something.']},{n:'Loss of interest',o:['I have not lost interest in other people or activities.','I am less interested in other people or things than before.','I have lost most of my interest in other people or things.','It\'s hard to get interested in anything.']},{n:'Indecisiveness',o:['I make decisions about as well as ever.','I find it more difficult to make decisions than usual.','I have much greater difficulty in making decisions than I used to.','I have trouble making any decisions.']},{n:'Worthlessness',o:['I do not feel I am worthless.','I don\'t consider myself as worthwhile and useful as I used to.','I feel more worthless as compared to others.','I feel utterly worthless.']},{n:'Loss of energy',o:['I have as much energy as ever.','I have less energy than I used to have.','I don\'t have enough energy to do very much.','I don\'t have enough energy to do anything.']},{n:'Sleep changes',o:['I have not experienced any change in my sleeping.','I sleep somewhat more/less than usual.','I sleep a lot more/less than usual.','I sleep most of the day / I wake up 1-2 hours early and can\'t get back to sleep.']},{n:'Irritability',o:['I am no more irritable than usual.','I am more irritable than usual.','I am much more irritable than usual.','I am irritable all the time.']},{n:'Appetite changes',o:['I have not experienced any change in my appetite.','My appetite is somewhat less/greater than usual.','My appetite is much less/greater than usual.','I have no appetite at all / I crave food all the time.']},{n:'Concentration',o:['I can concentrate as well as ever.','I can\'t concentrate as well as usual.','It\'s hard to keep my mind on anything for very long.','I find I can\'t concentrate on anything.']},{n:'Tiredness',o:['I am no more tired or fatigued than usual.','I get more tired or fatigued more easily than usual.','I am too tired or fatigued to do a lot of the things I used to do.','I am too tired or fatigued to do most of the things I used to do.']},{n:'Loss of interest in sex',o:['I have not noticed any recent change in my interest in sex.','I am less interested in sex than I used to be.','I am much less interested in sex now.','I have lost interest in sex completely.']}];
+const STAI_ITEMS=['I feel pleasant','I feel nervous and restless','I feel satisfied with myself','I wish I could be as happy as others seem to be','I feel like a failure','I feel rested','I am "calm, cool, and collected"','I feel that difficulties are piling up so that I cannot overcome them','I worry too much over something that really doesn\'t matter','I am happy','I have disturbing thoughts','I lack self-confidence','I feel secure','I make decisions easily','I feel inadequate','I am content','Some unimportant thought runs through my mind and bothers me','I take disappointments so keenly that I can\'t put them out of my mind','I am a steady person','I get in a state of tension or turmoil as I think over my recent concerns and interests'];
+const STAI_REVERSE=[0,2,5,6,9,12,13,15,18];
+function afterDigitSpan(){if(STATE.includeBdi){buildBdi();showScreen('scr-bdi');}else if(STATE.includeStai){buildStai();showScreen('scr-stai');}else showScreen('scr-demographics');}
+function buildBdi(){const c=document.getElementById('bdi-items');c.innerHTML='';BDI_ITEMS.forEach((item,i)=>{let h='<div class="bdi-item"><p>'+(i+1)+'. '+item.n+'</p>';item.o.forEach((o,j)=>{h+='<label><input type="radio" name="bdi_'+i+'" value="'+j+'"> '+o+'</label>';});h+='</div>';c.innerHTML+=h;});}
+function submitBdi(){const vals=[];for(let i=0;i<BDI_ITEMS.length;i++){const s=document.querySelector('input[name="bdi_'+i+'"]:checked');if(!s){document.getElementById('bdi-err').textContent='Answer all items.';return;}vals.push(parseInt(s.value));}STATE.bdi=vals;if(STATE.includeStai){buildStai();showScreen('scr-stai');}else showScreen('scr-demographics');}
+function buildStai(){const b=document.getElementById('stai-body');b.innerHTML='';STAI_ITEMS.forEach((item,i)=>{let r='<tr><td>'+item+'</td>';for(let v=1;v<=4;v++)r+='<td><input type="radio" name="stai_'+i+'" value="'+v+'"></td>';r+='</tr>';b.innerHTML+=r;});}
+function submitStai(){const vals=[];for(let i=0;i<STAI_ITEMS.length;i++){const s=document.querySelector('input[name="stai_'+i+'"]:checked');if(!s){document.getElementById('stai-err').textContent='Answer all items.';return;}vals.push(parseInt(s.value));}STATE.stai=vals;showScreen('scr-demographics');}
+
+// DEMOGRAPHICS & DOWNLOAD
+function submitDemographics(){const agePnts=document.getElementById('demo-age-pnts').checked;const ageVal=document.getElementById('demo-age').value;const gen=document.getElementById('demo-gender').value;const eng=document.getElementById('demo-english').value;const edu=document.getElementById('demo-education').value;if((!agePnts&&!ageVal)||!gen||!eng||!edu){document.getElementById('demo-err').textContent='Please complete each field to continue.';return;}document.getElementById('demo-err').textContent='';STATE.demographics={age:agePnts?'Prefer not to say':ageVal,gender:gen,english:eng,education:edu};document.getElementById('debrief-total').textContent=STATE.totalScore;const tbody=document.getElementById('debrief-block-rows');tbody.innerHTML='';['1a','1b','1c','2a','2b','2c'].forEach((bid,i)=>{const tr=document.createElement('tr');tr.innerHTML='<td style="padding:4px 16px;border-bottom:1px solid #ddd;text-align:center">'+(i+1)+'</td><td style="padding:4px 16px;border-bottom:1px solid #ddd;text-align:center">'+(STATE.blockScores[bid]||0)+'</td>';tbody.appendChild(tr);});downloadData();showScreen('scr-debrief');}
+function downloadData(){
+  const pd={session_datetime:new Date().toISOString(),counterbalance:STATE.counterbalance,quiz_attempts:STATE.quizAttempts,age:STATE.demographics.age||'',gender:STATE.demographics.gender||'',english_first:STATE.demographics.english||'',education:STATE.demographics.education||'',crt_total:STATE.crt?STATE.crt.total:'',crt_1:STATE.crt?STATE.crt.item1_correct:'',crt_1_response:STATE.crt?STATE.crt.item1_response:'',crt_2:STATE.crt?STATE.crt.item2_correct:'',crt_2_response:STATE.crt?STATE.crt.item2_response:'',crt_3:STATE.crt?STATE.crt.item3_correct:'',crt_3_response:STATE.crt?STATE.crt.item3_response:'',digit_forward:STATE.digitSpan?STATE.digitSpan.forward:'',digit_backward:STATE.digitSpan?STATE.digitSpan.backward:'',digit_total:STATE.digitSpan?STATE.digitSpan.total:'',digit_forward_max:STATE.digitSpan?STATE.digitSpan.forwardMax:'',digit_backward_max:STATE.digitSpan?STATE.digitSpan.backwardMax:'',score_total:STATE.totalScore};
+  ['1a','1b','1c','2a','2b','2c'].forEach(bid=>{pd['score_'+bid]=STATE.blockScores[bid]||0;});
+  STATE.strategyComments.forEach(sc=>{pd['strategy_'+sc.blockId]=(sc.text||'');});
+  ['2a','2b','2c'].forEach(bid=>{const bve=STATE.valEstData.filter(v=>v.block_id===bid);bve.forEach(v=>{const sn=SYM_SAFE[v.symbol]||v.symbol;pd['ve_'+bid+'_'+sn+'_est']=v.estimated_value;pd['ve_'+bid+'_'+sn+'_true']=v.true_mean;pd['ve_'+bid+'_'+sn+'_conf']=v.confidence;pd['ve_'+bid+'_'+sn+'_rt']=v.rt_ms;});});
+  ['2a','2b','2c'].forEach(bid=>{const bpc=STATE.pairedChoiceData.filter(p=>p.block_id===bid);const hasGT=bpc.some(p=>p.correct!==null);const correct=hasGT?bpc.filter(p=>p.correct===1).length:'';pd['pc_'+bid+'_correct']=correct;pd['pc_'+bid+'_total']=bpc.length;pd['pc_'+bid+'_mean_conf']=bpc.length>0?Math.round(bpc.reduce((a,p)=>a+p.confidence,0)/bpc.length*100)/100:'';bpc.forEach((p,i)=>{const k='pc_'+bid+'_p'+(i+1)+'_';pd[k+'left']=SYM_SAFE[p.left]||p.left;pd[k+'right']=SYM_SAFE[p.right]||p.right;pd[k+'chosen']=SYM_SAFE[p.chosen]||p.chosen;pd[k+'correct']=p.correct!==null?p.correct:'';pd[k+'conf']=p.confidence;pd[k+'rt']=p.rt_choice_ms;});});
+  if(STATE.bdi){pd.bdi_total=STATE.bdi.reduce((a,b)=>a+b,0);STATE.bdi.forEach((v,i)=>{pd['bdi_'+(i+1)]=v;});}
+  if(STATE.stai){let tot=0;STATE.stai.forEach((v,i)=>{const scored=STAI_REVERSE.includes(i)?(5-v):v;tot+=scored;pd['stai_'+(i+1)]=v;});pd.stai_trait_total=tot;}
+  const rows=STATE.events.map(e=>Object.assign({},e,pd));if(!rows.length)return;
+  const allKeysSet=new Set();rows.forEach(r=>Object.keys(r).forEach(k=>allKeysSet.add(k)));
+  const orderedPrefix=['session_datetime','prolific_id','age','gender','english_first','education','counterbalance','quiz_attempts','score_total','score_1a','score_1b','score_1c','score_2a','score_2b','score_2c','block_id','block_number','block_variance','block_cue_mode','block_click_cost','trial_in_block','trial_global','is_practice','phase','event_type','event_timestamp_ms','event_time_in_trial_ms','node_id','node_depth','node_value','node_cue','node_cue_text','click_number','frontier_nodes','frontier_size','n_revealed','is_on_best_path','path_values','best_path_value','state_rewards','state_cues','state_cues_text','route','route_values','path_reward','click_cost','trial_score','n_clicks','route_depth','search_breadth','max_search_depth','trial_duration_ms','all_clicks','optimal_d1_path','optimal_d1_values','optimal_d1_reward','optimal_d1_net','optimal_d2_path','optimal_d2_values','optimal_d2_reward','optimal_d2_net','optimal_d3_path','optimal_d3_values','optimal_d3_reward','optimal_d3_net','symbol_clicks','symbol_clicks_text'];
+  const orderedKeys=orderedPrefix.filter(k=>allKeysSet.has(k));
+  const remaining=Array.from(allKeysSet).filter(k=>!orderedPrefix.includes(k));
+  const stratKeys=remaining.filter(k=>k.startsWith('strategy_')).sort();
+  const veKeys=remaining.filter(k=>k.startsWith('ve_')).sort();
+  const pcKeys=remaining.filter(k=>k.startsWith('pc_')).sort();
+  const crtDigitSuffix=['crt_total','crt_1','crt_1_response','crt_2','crt_2_response','crt_3','crt_3_response','digit_forward','digit_backward','digit_total','digit_forward_max','digit_backward_max'];
+  const otherKeys=remaining.filter(k=>!k.startsWith('strategy_')&&!k.startsWith('ve_')&&!k.startsWith('pc_')&&!crtDigitSuffix.includes(k));
+  const keys=[...orderedKeys,...otherKeys,...stratKeys,...veKeys,...pcKeys,...crtDigitSuffix];
+  const esc=v=>{let s=String(v);if(s.includes(',')||s.includes('"')||s.includes('\n')){s='"'+s.replace(/"/g,'""')+'"';}return s;};const csv=keys.join(',')+'\n'+rows.map(r=>keys.map(k=>{let v=r[k];if(v===undefined||v===null)v='';return esc(v)}).join(',')).join('\n');
+  const d=new Date();const filename='bounded_search_'+STATE.participantId+'_'+d.toISOString().slice(0,10)+'_'+d.toTimeString().slice(0,8).replace(/:/g,'-')+'.csv';fetch("https://pipe.jspsych.org/api/data/",{method:"POST",headers:{"Content-Type":"application/json",Accept:"*/*"},keepalive:true,body:JSON.stringify({experimentID:"Kda7DZI5NFVg",filename:filename,data:csv})}).catch(()=>{});
+}
+</script>
+</body>
+</html>
